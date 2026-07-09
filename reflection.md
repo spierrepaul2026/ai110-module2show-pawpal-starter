@@ -7,10 +7,16 @@
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+My intial UML design will be focused on sections. First make an account for to add their pet name, what food they eat, if they need medication. Add task if needed.
+
+- Track pet care tasks (walks, feeding, meds, enrichment, grooming, etc.)
+- Consider constraints (time available, priority, owner preferences)
+- Produce a daily plan and explain why it chose that plan
+
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+- Did your design change during implementation? Yes
+- If yes, describe at least one change and why you made it. I added the daliy plan section since it hadent crossed my mind but seeing it in part 1a brought a new clear idea.
 
 ---
 
