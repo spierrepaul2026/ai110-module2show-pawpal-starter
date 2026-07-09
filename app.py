@@ -54,7 +54,7 @@ if owner.pets:
             time = st.text_input("Time (HH:MM)", value="08:00")
         with t3:
             frequency = st.selectbox("Frequency", ["once", "daily", "weekly"], index=1)
-        if st.form_submit_button("Add task") and description.strip():
+        if st.form_submit_button("Add task") and description.strip() and selected_pet:
             selected_pet.add_task(description.strip(), time.strip(), frequency)
 
     # Each pet's tasks, with a checkbox that drives completion status

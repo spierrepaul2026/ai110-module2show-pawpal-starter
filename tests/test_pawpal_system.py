@@ -3,6 +3,8 @@
 Run with:  python3 -m pytest
 """
 
+from datetime import date, timedelta
+
 import pytest
 
 from pawpal_system import Owner, Pet, Task, Scheduler
@@ -158,3 +160,120 @@ def test_agenda_when_all_caught_up():
     owner = Owner("Jordan")
     scheduler = Scheduler(owner)
     assert "caught up" in scheduler.agenda()
+
+
+# --- Sorting correctness ---------------------------------------------------
+
+def test_sort_by_time_returns_chronological_order():
+    """Tasks added out of order come back earliest-first."""
+    tasks = [
+        Task("Evening walk", "18:00"),
+        Task("Morning feeding", "08:00"),
+        Task("Midday check", "12:30"),
+    ]
+    scheduler = Scheduler(Owner("Jordan"))
+    ordered = scheduler.sort_by_time(tasks)
+    assert [t.time for t in ordered] == ["08:00", "12:30", "18:00"]
+
+
+def test_sort_by_time_does_not_mutate_input():
+    """Sorting returns a new list; the caller's list is left untouched."""
+    tasks = [Task("Later", "18:00"), Task("Earlier", "08:00")]
+    scheduler = Scheduler(Owner("Jordan"))
+    scheduler.sort_by_time(tasks)
+    assert [t.time for t in tasks] == ["18:00", "08:00"]
+
+
+# --- Recurrence logic ------------------------------------------------------
+
+def test_daily_task_reopens_for_the_following_day():
+    """Completing a daily task schedules its next occurrence one day later,
+    and refresh() reopens it once that day arrives.
+
+    Note: this code rolls the SAME task's due_date forward rather than
+    creating a new Task object; the recurrence is the task reappearing.
+    """
+    today = date(2026, 7, 9)
+    task = Task("Morning walk", "08:00", frequency="daily")
+
+    task.mark_complete(today=today)
+    assert task.completed is True
+    # next occurrence is scheduled for the following day
+    assert task.due_date == today + timedelta(days=1)
+
+    # same day: still done, does not reappear yet
+    assert task.refresh(today=today) is False
+    assert task.completed is True
+
+    # the following day: it reopens for its new occurrence
+    tomorrow = today + timedelta(days=1)
+    assert task.refresh(today=tomorrow) is True
+    assert task.completed is False
+
+
+def test_once_task_never_reopens():
+    """A one-off task stays done and is never rescheduled."""
+    today = date(2026, 7, 9)
+    task = Task("Vet appointment", "14:00", frequency="once")
+    task.mark_complete(today=today)
+    # due_date is not rolled forward for one-off tasks
+    later = today + timedelta(days=30)
+    assert task.refresh(today=later) is False
+    assert task.completed is True
+
+
+def test_scheduler_refresh_due_reopens_recurring_tasks():
+    """refresh_due reopens every recurring task whose due date has arrived
+    and reports how many were reopened."""
+    today = date(2026, 7, 9)
+    owner = Owner("Jordan")
+    pet = owner.add_pet("Mochi")
+    daily = pet.add_task("Feed", "08:00", frequency="daily")
+    scheduler = Scheduler(owner)
+
+    daily.mark_complete(today=today)
+    reopened = scheduler.refresh_due(today=today + timedelta(days=1))
+    assert reopened == 1
+    assert daily.completed is False
+
+
+# --- Conflict detection ----------------------------------------------------
+
+def test_find_conflicts_flags_duplicate_times():
+    """Two tasks scheduled at the same time are reported as one clash group."""
+    owner = Owner("Jordan")
+    mochi = owner.add_pet("Mochi")
+    luna = owner.add_pet("Luna", "cat")
+    mochi.add_task("Walk", "08:00")
+    luna.add_task("Feed", "08:00")
+    scheduler = Scheduler(owner)
+
+    conflicts = scheduler.find_conflicts()
+    assert len(conflicts) == 1
+    assert len(conflicts[0]) == 2           # both tasks in the clash group
+    assert scheduler.has_conflicts() is True
+
+
+def test_no_conflict_when_times_differ():
+    """Distinct times produce no clash."""
+    owner = Owner("Jordan")
+    pet = owner.add_pet("Mochi")
+    pet.add_task("Walk", "08:00")
+    pet.add_task("Dinner", "18:00")
+    scheduler = Scheduler(owner)
+
+    assert scheduler.find_conflicts() == []
+    assert scheduler.has_conflicts() is False
+
+
+def test_same_pet_tasks_at_same_time_conflict():
+    """A clash within a single pet's own schedule is still reported."""
+    owner = Owner("Jordan")
+    pet = owner.add_pet("Mochi")
+    pet.add_task("Walk", "08:00")
+    pet.add_task("Meds", "08:00")
+    scheduler = Scheduler(owner)
+
+    conflicts = scheduler.find_conflicts()
+    assert len(conflicts) == 1
+    assert len(conflicts[0]) == 2

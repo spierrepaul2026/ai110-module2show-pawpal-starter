@@ -26,12 +26,13 @@ My intial UML design will be focused on sections. First make an account for to a
 
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
-
+My scheduler consider time and pritority. I informed it that pritority takes mroe importance since it could be high pritory but take a longer time.
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+A tradeoff we saw was the conflict_warning() could reuse find_conflicts()'s grouping logic — right now the two methods both walk tasks and bucket by time, just with different safety guards. Some duplication there, though merging them trades a little clarity for less repetition.
 ---
 
 ## 3. AI Collaboration

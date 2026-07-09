@@ -56,30 +56,104 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 
 ## 🧪 Testing PawPal+
 
-```bash
-# Run the full test suite:
-pytest
+Run the full test suite from the project root:
 
-# Run with coverage:
-pytest --cov
+```bash
+python -m pytest
 ```
+
+The tests live in [`tests/test_pawpal_system.py`](tests/test_pawpal_system.py) and exercise
+the logic layer in [`pawpal_system.py`](pawpal_system.py):
+
+- **`Task`** — default values, and `mark_complete` / `mark_incomplete` / `toggle` state changes.
+- **`Pet`** — adding, removing, and looking up tasks, plus splitting them into pending vs. completed.
+- **`Owner`** — adding pets, case-insensitive pet lookup, and collecting every `(pet, task)` pair.
+- **`Scheduler`** — time-ordered daily schedules across pets, `next_task`, completing tasks,
+  per-pet task lists, and the human-readable agenda.
+- **Sorting** — `sort_by_time` returns a chronological copy without mutating the caller's list.
+- **Recurrence** — daily/weekly tasks roll their due date forward and reopen once the day arrives,
+  while one-off tasks stay done.
+- **Conflict detection** — tasks booked at the same time are flagged, across different pets and
+  within a single pet, with no false positives when times differ.
 
 Sample test output:
 
 ```
-# Paste your pytest output here
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/stephenpierre-paul/Desktop/A110 project/ai110-module2show-pawpal-starter
+collected 25 items
+
+tests/test_pawpal_system.py .........................                    [100%]
+
+============================== 25 passed in 0.01s ==============================
 ```
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
+The scheduling "brain" lives in the `Scheduler` class in [`pawpal_system.py`](pawpal_system.py),
+which wraps an `Owner` and works across all of that owner's pets' tasks. Each task
+stores a description, a 24-hour `time` string (`"08:00"`), a `frequency`
+(`once` / `daily` / `weekly`), and its completion state. The features below build on
+that data.
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting | `Scheduler.sort_by_time()`, `Scheduler.daily_schedule()`, `Scheduler.next_task()` | Chronological ordering by task time |
+| Filtering | `Scheduler.filter_tasks()`, `Scheduler.pending_tasks()`, `Scheduler.completed_tasks()` | By pet name and/or completion status |
+| Conflict handling | `Scheduler.find_conflicts()`, `Scheduler.has_conflicts()`, `Scheduler.conflict_report()`, `Scheduler.conflict_warning()` | Detects tasks booked at the same time |
+| Recurring tasks | `Task.mark_complete()`, `Task.refresh()`, `Scheduler.refresh_due()` | Daily/weekly tasks roll forward and reappear |
+
+### Sorting behavior
+
+- **`Scheduler.sort_by_time(tasks)`** returns a new list of `Task` objects ordered
+  earliest-first. Because times are stored as zero-padded 24-hour strings
+  (`"08:00"`), plain string comparison already sorts chronologically — no date
+  parsing needed. The original list is left unchanged.
+- **`Scheduler.daily_schedule()`** applies the same ordering to the day's *pending*
+  `(pet, task)` pairs to produce the plan.
+- **`Scheduler.next_task()`** returns just the earliest pending task using a single
+  `min()` pass (O(n)) instead of sorting the whole list, or `None` when everything
+  is done.
+
+### Filtering behavior
+
+- **`Scheduler.filter_tasks(completed=None, pet_name=None)`** is the single filtering
+  entry point. Both arguments are optional and combine with AND:
+  - `completed=True` → only done tasks, `completed=False` → only pending,
+    `None` → don't filter on status.
+  - `pet_name` → case-insensitive match on a pet's name, `None` → all pets.
+- **`Scheduler.pending_tasks()`** and **`Scheduler.completed_tasks()`** are thin
+  shortcuts that delegate to `filter_tasks()`, so there is one source of truth for
+  status filtering.
+
+### Conflict detection logic
+
+- **`Scheduler.find_conflicts(include_completed=False)`** buckets tasks by their
+  `time` and returns groups of two or more `(pet, task)` pairs that share the same
+  slot. It catches clashes **between different pets** and **within a single pet**,
+  and ignores tasks with a blank/missing time. Only pending tasks are checked by
+  default (completed tasks no longer compete for the owner's time).
+- **`Scheduler.has_conflicts()`** returns a simple boolean for quick checks.
+- **`Scheduler.conflict_report()`** produces a multi-line, human-readable summary
+  (one line per clashing time slot).
+- **`Scheduler.conflict_warning()`** is a crash-proof helper for UI code: it returns
+  a short one-line warning string (or `""` when clear) and is guarded so an
+  unexpected error yields a message instead of taking down the app.
+
+### Recurring task logic
+
+- **`Task.mark_complete(today=None)`** marks a task done for its current occurrence.
+  For **daily** tasks it rolls `due_date` forward one day; for **weekly** tasks,
+  seven days; **once** tasks simply stay done. `completed` stays `True` until the
+  next due day.
+- **`Task.refresh(today=None)`** reopens a completed daily/weekly task once its
+  `due_date` has arrived, so it reappears in the plan. One-off tasks are never
+  reopened.
+- **`Scheduler.refresh_due(today=None)`** applies `refresh()` across every task and
+  returns how many were reopened — call it at the start of a day (or before building
+  the agenda). The optional `today` argument on all three methods makes the recurring
+  logic deterministic and easy to test across simulated dates.
 
 ## 📸 Demo Walkthrough
 
