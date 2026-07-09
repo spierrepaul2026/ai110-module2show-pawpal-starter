@@ -6,9 +6,12 @@ classDiagram
         +string time
         +string frequency
         +bool completed
-        +markComplete() void
+        +date due_date
+        +date last_completed
+        +markComplete(today) void
         +markIncomplete() void
         +toggle() void
+        +refresh(today) bool
     }
 
     class Pet {
@@ -38,12 +41,21 @@ classDiagram
         +pendingTasks() Pair[]
         +completedTasks() Pair[]
         +tasksForPet(name) Task[]
+        +filterTasks(completed, petName) Pair[]
+        +sortByTime(tasks) Task[]
         +dailySchedule() Pair[]
         +nextTask() Pair
         +completeTask(task) bool
+        +refreshDue(today) int
+        +findConflicts(includeCompleted) Group[]
+        +hasConflicts(includeCompleted) bool
+        +conflictReport(includeCompleted) string
+        +conflictWarning(includeCompleted) string
         +agenda() string
     }
 
     Owner "1" --> "*" Pet : manages
     Pet "1" --> "*" Task : has
     Scheduler "1" --> "1" Owner : plans for
+    Scheduler ..> Pet : reads tasks
+    Scheduler ..> Task : sorts / detects conflicts

@@ -57,17 +57,23 @@ if owner.pets:
         if st.form_submit_button("Add task") and description.strip() and selected_pet:
             selected_pet.add_task(description.strip(), time.strip(), frequency)
 
-    # Each pet's tasks, with a checkbox that drives completion status
+    # Each pet's tasks, ordered by time via the Scheduler, with a checkbox
+    # that drives completion status.
     for pet in owner.pets:
         st.markdown(f"**{pet}**")
         if not pet.tasks:
             st.caption("No tasks yet.")
-        for i, task in enumerate(pet.tasks):
+        for task in scheduler.sort_by_time(pet.tasks):
             task.completed = st.checkbox(
                 f"{task.time} — {task.description} ({task.frequency})",
                 value=task.completed,
-                key=f"{pet.name}-{i}",
+                key=f"{pet.name}-{id(task)}",
             )
+
+    # Surface any time clashes the Scheduler detects across all pets.
+    warning = scheduler.conflict_warning()
+    if warning:
+        st.warning(warning)
 
 st.divider()
 
@@ -80,7 +86,21 @@ if st.button("Generate schedule", type="primary"):
     if not schedule:
         st.success("All caught up — no pending tasks! 🎉")
     else:
-        st.text(scheduler.agenda())
+        # Conflict warnings first, so clashes are obvious before reading the plan.
+        if scheduler.has_conflicts():
+            st.warning(scheduler.conflict_warning())
+            with st.expander("See conflicting tasks"):
+                st.text(scheduler.conflict_report())
+        else:
+            st.success("No scheduling conflicts — the day is clear. ✅")
+
+        # Quick counts of pending vs. completed, using the Scheduler filters.
+        pending = scheduler.pending_tasks()
+        done = scheduler.completed_tasks()
+        m1, m2 = st.columns(2)
+        m1.metric("Pending", len(pending))
+        m2.metric("Completed", len(done))
+
         st.markdown("### Ordered plan")
         st.table(
             [

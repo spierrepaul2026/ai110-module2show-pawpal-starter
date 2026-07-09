@@ -1,0 +1,61 @@
+classDiagram
+    %% PawPal+ — pet care planning assistant (final build)
+
+    class Task {
+        +string description
+        +string time
+        +string frequency
+        +bool completed
+        +date due_date
+        +date last_completed
+        +markComplete(today) void
+        +markIncomplete() void
+        +toggle() void
+        +refresh(today) bool
+    }
+
+    class Pet {
+        +string name
+        +string species
+        +string breed
+        +Task[] tasks
+        +addTask(description, time, frequency) Task
+        +removeTask(task) void
+        +pendingTasks() Task[]
+        +completedTasks() Task[]
+    }
+
+    class Owner {
+        +string name
+        +string phone
+        +Pet[] pets
+        +addPet(name, species, breed) Pet
+        +removePet(pet) void
+        +getPet(name) Pet
+        +allTasks() Pair[]
+    }
+
+    class Scheduler {
+        +Owner owner
+        +allTasks() Pair[]
+        +pendingTasks() Pair[]
+        +completedTasks() Pair[]
+        +tasksForPet(name) Task[]
+        +filterTasks(completed, petName) Pair[]
+        +sortByTime(tasks) Task[]
+        +dailySchedule() Pair[]
+        +nextTask() Pair
+        +completeTask(task) bool
+        +refreshDue(today) int
+        +findConflicts(includeCompleted) Group[]
+        +hasConflicts(includeCompleted) bool
+        +conflictReport(includeCompleted) string
+        +conflictWarning(includeCompleted) string
+        +agenda() string
+    }
+
+    Owner "1" --> "*" Pet : manages
+    Pet "1" --> "*" Task : has
+    Scheduler "1" --> "1" Owner : plans for
+    Scheduler ..> Pet : reads tasks
+    Scheduler ..> Task : sorts / detects conflicts
