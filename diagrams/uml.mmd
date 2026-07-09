@@ -1,15 +1,49 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
-    %% Keep this file updated so it matches your final implementation.
+    %% PawPal+ — pet care planning assistant
 
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Task {
+        +string description
+        +string time
+        +string frequency
+        +bool completed
+        +markComplete() void
+        +markIncomplete() void
+        +toggle() void
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +string name
+        +string species
+        +string breed
+        +Task[] tasks
+        +addTask(description, time, frequency) Task
+        +removeTask(task) void
+        +pendingTasks() Task[]
+        +completedTasks() Task[]
     }
 
-    ClassName --> AnotherClass : relationship
+    class Owner {
+        +string name
+        +string phone
+        +Pet[] pets
+        +addPet(name, species, breed) Pet
+        +removePet(pet) void
+        +getPet(name) Pet
+        +allTasks() Pair[]
+    }
+
+    class Scheduler {
+        +Owner owner
+        +allTasks() Pair[]
+        +pendingTasks() Pair[]
+        +completedTasks() Pair[]
+        +tasksForPet(name) Task[]
+        +dailySchedule() Pair[]
+        +nextTask() Pair
+        +completeTask(task) bool
+        +agenda() string
+    }
+
+    Owner "1" --> "*" Pet : manages
+    Pet "1" --> "*" Task : has
+    Scheduler "1" --> "1" Owner : plans for
