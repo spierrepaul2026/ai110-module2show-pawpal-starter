@@ -1,57 +1,52 @@
-# PawPal+ (Module 2 Project)
+# 🐾 PawPal+
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pet.
+A pet care planner for busy owners. Add your pets and their care tasks, and PawPal+ builds a time-ordered daily plan across every pet, flags tasks booked at the same time, and brings daily and weekly tasks back once they're due again.
 
-## Scenario
+Built in Python with a Streamlit interface and a 25-test pytest suite. I designed the classes in UML first, then built the logic layer, then connected it to the UI.
 
-A busy pet owner needs help staying consistent with pet care. They want an assistant that can:
+**Built by Stephen Pierre-Paul** for CodePath AI110: Foundations of AI Engineering.
 
-- Track pet care tasks (walks, feeding, meds, enrichment, grooming, etc.)
-- Consider constraints (time available, priority, owner preferences)
-- Produce a daily plan and explain why it chose that plan
+## Features
 
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
+- **Daily plan across pets:** every pending task for every pet, sorted by time
+- **Conflict detection:** flags two tasks booked in the same slot, for the same pet or different pets
+- **Recurring tasks:** daily and weekly tasks roll forward when completed and reopen on their next due day
+- **Filtering:** by pet and by done or pending
+- **Tested:** 25 pytest tests cover tasks, pets, owners, scheduling, recurrence, and conflicts
 
-## What you will build
+## Tech stack
 
-Your final app should:
+Python · Streamlit · pytest · Mermaid (UML diagrams in [`diagrams/`](diagrams/))
 
-- Let a user enter basic owner + pet info
-- Let a user add/edit tasks (duration + priority at minimum)
-- Generate a daily schedule/plan based on constraints and priorities
-- Display the plan clearly (and ideally explain the reasoning)
-- Include tests for the most important scheduling behaviors
-
-## Getting started
-
-### Setup
+## Run it
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+streamlit run app.py   # web app
+python main.py         # terminal demo
+python -m pytest       # tests
 ```
-
-### Suggested workflow
-
-1. Read the scenario carefully and identify requirements and edge cases.
-2. Draft a UML diagram (classes, attributes, methods, relationships).
-3. Convert UML into Python class stubs (no logic yet).
-4. Implement scheduling logic in small increments.
-5. Add tests to verify key behaviors.
-6. Connect your logic to the Streamlit UI in `app.py`.
-7. Refine UML so it matches what you actually built.
 
 ## 🖥️ Sample Output
 
-Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
+Output of `python main.py`, with two pets and a deliberate 08:00 clash:
 
 ```
-# e.g.:
-# Daily plan for Biscuit (Golden Retriever):
-#   08:00 — Morning walk (30 min) [priority: high]
-#   09:00 — Feeding (10 min) [priority: high]
-#   ...
+Today's plan for Jordan:
+  08:00  Mochi: Morning feeding (daily)
+  08:00  Luna: Feed Luna (daily)
+  08:30  Mochi: Heart meds (daily)
+  18:00  Mochi: Evening walk (daily)
+  19:00  Luna: Litter box (daily)
+(5 to do, 0 done)
+
+⚠️ Scheduling conflict: 1 time slot(s) with overlapping tasks (08:00).
+Clashing tasks:
+  08:00  Mochi: Morning feeding
+  08:00  Luna: Feed Luna
 ```
 
 ## 🧪 Testing PawPal+
@@ -157,12 +152,9 @@ that data.
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
-
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
-
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+1. Run `streamlit run app.py` and enter the owner's name and phone number.
+2. Add one or more pets with a name, species, and breed.
+3. Pick a pet and add care tasks, each with a time (HH:MM) and a frequency of once, daily, or weekly.
+4. Click **Generate schedule** to see the day's plan sorted by time.
+5. If two tasks share a time slot, PawPal+ shows a conflict warning; otherwise it confirms the day is clear.
+6. Check off tasks as they're done. Daily and weekly tasks come back on their next due day.
